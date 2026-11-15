@@ -8,7 +8,7 @@ const adminPassword=process.env.BOOTSTRAP_ADMIN_PASSWORD;
 if(!adminPassword||adminPassword.length<14){console.error('Set BOOTSTRAP_ADMIN_PASSWORD to a unique password of at least 14 characters in backend/.env');process.exit(1)}
 try{
  let t=await pool.query('SELECT tenant_id FROM tenants WHERE organization_name=$1 LIMIT 1',[tenantName]);let tenantId=t.rows[0]?.tenant_id;
- if(!tenantId){t=await pool.query('INSERT INTO tenants(organization_name) VALUES($1) RETURNING tenant_id');tenantId=t.rows[0].tenant_id}
+ if(!tenantId){t=await pool.query('INSERT INTO tenants(organization_name) VALUES($1) RETURNING tenant_id',[tenantName]);tenantId=t.rows[0].tenant_id}
  const hash=await bcrypt.hash(adminPassword,12);
  await withTenantTransaction(tenantId,'',async c=>{
   const u=await c.query("INSERT INTO users(tenant_id,full_name,email,password_hash,role,requested_role,department,active,pending) VALUES($1,$2,$3,$4,'super_admin','super_admin','Platform Administration',true,false) ON CONFLICT (tenant_id,email) DO UPDATE SET full_name=EXCLUDED.full_name,password_hash=EXCLUDED.password_hash,role='super_admin',requested_role='super_admin',active=true,pending=false RETURNING user_id",[tenantId,adminName,adminEmail,hash]);
