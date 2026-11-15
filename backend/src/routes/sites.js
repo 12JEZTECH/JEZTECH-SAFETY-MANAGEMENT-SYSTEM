@@ -1,0 +1,9 @@
+import {Router} from 'express';
+import {z} from 'zod';
+import {authenticateToken,requireRole,tenantTx} from '../middleware/auth.js';
+import {writeAudit} from '../services/audit.js';
+const router=Router();router.use(authenticateToken);
+router.get('/',requireRole(['super_admin','admin','safety_department','auditor_officer']),async(req,res,next)=>{try{const sites=await tenantTx(req,async c=>(await c.query('SELECT site_id,site_name,address,active,created_at FROM sites WHERE tenant_id=$1 ORDER BY site_name',[req.auth.tenantId])).rows);res.json({sites})}catch(e){next(e)}});
+router.post('/',requireRole(['super_admin','admin']),async(req,res,next)=>{try{const x=z.object({site_name:z.string().min(2).max(180),address:z.string().max(500).optional()}).parse(req.body);const site=await tenantTx(req,async c=>{const r=await c.query('INSERT INTO sites(tenant_id,site_name,address) VALUES($1,$2,$3) RETURNING *',[req.auth.tenantId,x.site_name,x.address||null]);await writeAudit(c,req,'SITE_CREATED','sites',r.rows[0].site_id);return r.rows[0]});res.status(201).json({site})}catch(e){next(e)}});
+router.patch('/:id',requireRole(['super_admin','admin']),async(req,res,next)=>{try{const x=z.object({site_name:z.string().min(2).max(180).optional(),address:z.string().max(500).nullable().optional(),active:z.boolean().optional()}).refine(v=>Object.keys(v).length>0).parse(req.body);const cols=[],vals=[req.params.id,req.auth.tenantId];for(const [k,v] of Object.entries(x)){vals.push(v);cols.push(k+'=$'+vals.length)}const site=await tenantTx(req,async c=>{const r=await c.query('UPDATE sites SET '+cols.join(',')+' WHERE site_id=$1 AND tenant_id=$2 RETURNING *',vals);if(r.rowCount)await writeAudit(c,req,'SITE_UPDATED','sites',req.params.id);return r.rows[0]});if(!site)return res.status(404).json({error:'Site not found.'});res.json({site})}catch(e){next(e)}});
+export default router;
