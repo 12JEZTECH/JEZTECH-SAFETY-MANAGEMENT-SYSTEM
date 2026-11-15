@@ -1,0 +1,24 @@
+name: SafetyOS CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  syntax-and-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package.json
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm install
+      - name: Check JavaScript syntax
+        run: find backend/src -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Run tests
+        working-directory: backend
+        run: npm test
