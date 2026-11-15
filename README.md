@@ -1,21 +1,24 @@
 # JEZTECH SafetyOS Enterprise
 
-JEZTECH SafetyOS is an enterprise safety management workspace for Super Admin, Admin, Safety Department, Auditor Officer and Standard User roles.
+JEZTECH SafetyOS is a role-based Enterprise Safety Management System for organisations in Kenya and other markets.
 
-## Backend package
+## Included in this repository
 
-The initial backend source package is maintained as a separate downloadable ZIP supplied with this project. This repository README documents the intended deployment and setup entry points.
+- Node.js/Express backend with JWT authentication and bcrypt password hashing
+- PostgreSQL schema with tenant-scoped row-level security policies
+- Roles for Super Admin, Admin, Safety Department, Auditor Officer, Standard User and WallScreen kiosk
+- Safety workspace persistence, site administration and audit logging
+- Industrial inspection assessments, findings, corrective actions, management responses, auditor sign-off and PDF/CSV exports
+- HMAC-signed equipment QR payloads and contractor/visitor gate pass workflow
+- Aggregate WallScreen endpoint, tenant-authenticated Socket.IO events and scheduled digest/overstay jobs
+- Docker Compose setup, PostgreSQL backup/restore scripts, Render Blueprint and GitHub Actions CI
 
-## Planned architecture
+## Run locally
 
-- Node.js ES-module API
-- PostgreSQL persistence and tenant isolation
-- JWT authentication and role-based access control
-- Safety operations and Auditor Officer inspection workflows
-- PDF/CSV reporting, QR equipment tags, contractor gate passes
+Follow [Backend Setup](backend/README.md). The initial database migration is intended for a new database. Set secrets locally; never commit `.env` files.
 
-## Local setup
+## Current scope
 
-See `backend/README.md` and `.env.example` for configuration. Never commit `.env` or production secrets.
+The repository contains a backend implementation foundation and a small API-connected console. The full legacy SafetyOS frontend still needs to be ported and integrated with the normalized API. CI has passed JavaScript syntax and smoke checks; live PostgreSQL, browser E2E, email-provider and Render deployment tests remain outstanding.
 
-> Deployment status: source scaffold only until database migrations, integration tests and a live environment are verified.
+The platform supports safety workflow management and evidence tracking. It is not a substitute for qualified safety professionals or formal regulatory certification.
