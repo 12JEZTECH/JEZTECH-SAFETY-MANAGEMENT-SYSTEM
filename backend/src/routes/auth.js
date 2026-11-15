@@ -1,0 +1,15 @@
+import { Router } from 'express';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { z } from 'zod';
+import { pool, withTenantTransaction } from '../config/db.js';
+import { authenticateToken } from '../middleware/auth.js';
+import { writeAudit } from '../services/audit.js';
+const router = Router();
+const loginSchema = z.object({ email: z.string().email().max(180), password: z.string().min(1).max(200) });
+const registerSchema = z.object({ name: z.string().min(2).max(140), email: z.string().email().max(180), department: z.string().min(1).max(120), requestedRole: z.enum(['user','safety_department','auditor_officer','admin','super_admin']), password: z.string().min(10).max(200) });
+function tokenFor(user) { return jwt.sign({ tenantId: user.tenant_id, role: user.role, email: user.email, name: user.full_name }, process.env.JWT_SECRET, { subject: user.user_id, expiresIn: process.env.JWT_EXPIRES_IN || '8h', algorithm: 'HS256' }); }
+router.post('/login', async (req,res,next) => { try { const input=loginSchema.parse(req.body); const {rows}=await pool.query("SELECT u.*,t.organization_name,t.status FROM users u JOIN tenants t USING(tenant_id) WHERE lower(u.email)=lower($1) ORDER BY u.created_at LIMIT 1",[input.email]); const user=rows[0]; if(!user||!(await bcrypt.compare(input.password,user.password_hash)))return res.status(401).json({error:'Email or password is incorrect.'}); if(!user.active||user.pending)return res.status(403).json({error:'This account is awaiting administrator approval or is disabled.'}); if(!['ACTIVE','TRIAL'].includes(user.status))return res.status(403).json({error:'This organisation is currently suspended.'}); await withTenantTransaction(user.tenant_id,user.user_id,async c=>{await c.query('UPDATE users SET last_login_at=now() WHERE user_id=$1',[user.user_id]);await writeAudit(c,{auth:{tenantId:user.tenant_id,userId:user.user_id},ip:req.ip},'USER_SIGN_IN','users',user.user_id)}); res.json({token:tokenFor(user),user:{id:user.user_id,name:user.full_name,email:user.email,role:user.role,department:user.department,org:user.organization_name}}); } catch(e){next(e)} });
+router.post('/register',async(req,res,next)=>{try{const input=registerSchema.parse(req.body);const t=await pool.query('SELECT tenant_id FROM tenants ORDER BY created_at LIMIT 1');if(!t.rows[0])return res.status(503).json({error:'Platform has not been initialized.'});const tenantId=t.rows[0].tenant_id;const pending=input.requestedRole!=='user';const hash=await bcrypt.hash(input.password,12);const r=await pool.query("INSERT INTO users(tenant_id,full_name,email,password_hash,role,requested_role,department,active,pending) VALUES($1,$2,lower($3),$4,'user',$5,$6,$7,$8) RETURNING user_id",[tenantId,input.name,input.email,hash,input.requestedRole,input.department,!pending,pending]);res.status(201).json({message:pending?'Registration submitted for administrator approval.':'Registration complete.',pending,userId:r.rows[0].user_id})}catch(e){if(e.code==='23505')return res.status(409).json({error:'Account already exists.'});next(e)}});
+router.get('/me',authenticateToken,(req,res)=>res.json({user:req.auth}));
+export default router;
