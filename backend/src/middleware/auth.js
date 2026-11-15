@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { pool, withTenantTransaction } from '../config/db.js';
 export async function authenticateToken(req, res, next) {
-  const token = (req.headers.authorization || '').replace(/^Bearer\\s+/i, '');
+  const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
   if (!token) return res.status(401).json({ error: 'Authentication required.' });
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
