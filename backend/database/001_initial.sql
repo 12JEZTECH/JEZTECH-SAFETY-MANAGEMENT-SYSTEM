@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
   full_name varchar(140) NOT NULL,
   email varchar(180) NOT NULL,
   password_hash text NOT NULL,
-  requested_role varchar(32) NOT NULL DEFAULT 'user' CHECK (requested_role IN ('user','safety_department','auditor_officer','admin','super_admin')),
-  role varchar(32) NOT NULL CHECK (role IN ('super_admin','admin','safety_department','auditor_officer','user')),
+  requested_role varchar(32) NOT NULL DEFAULT 'user' CHECK (requested_role IN ('user','safety_department','auditor_officer','admin','super_admin','wall_display_kiosk')),
+  role varchar(32) NOT NULL CHECK (role IN ('super_admin','admin','safety_department','auditor_officer','user','wall_display_kiosk')),
   department varchar(120),
   active boolean NOT NULL DEFAULT true,
   pending boolean NOT NULL DEFAULT false,
@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS users (
   created_at timestamptz NOT NULL DEFAULT now(),
   UNIQUE (tenant_id, email)
 );
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check CHECK (role IN ('super_admin','admin','safety_department','auditor_officer','user','wall_display_kiosk'));
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_requested_role_check;
+ALTER TABLE users ADD CONSTRAINT users_requested_role_check CHECK (requested_role IN ('user','safety_department','auditor_officer','admin','super_admin','wall_display_kiosk'));
 CREATE INDEX IF NOT EXISTS users_tenant_role_idx ON users(tenant_id, role);
 CREATE UNIQUE INDEX IF NOT EXISTS users_email_global_uq ON users(lower(email));
 CREATE TABLE IF NOT EXISTS sites (
