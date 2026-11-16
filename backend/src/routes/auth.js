@@ -47,7 +47,11 @@ router.post('/mfa/verify',async(req,res,next)=>{try{
 }catch(e){if(['JsonWebTokenError','TokenExpiredError','NotBeforeError'].includes(e.name))return res.status(401).json({error:'MFA challenge is invalid or expired.'});next(e)}});
 router.post('/mfa/enroll',authenticateToken,async(req,res,next)=>{try{
  if(!process.env.MFA_ENCRYPTION_KEY||process.env.MFA_ENCRYPTION_KEY.length<32)return res.status(503).json({error:'MFA_ENCRYPTION_KEY must be configured with at least 32 characters.'});
- const account=await pool.query('SELECT password_hash,mfa_enabled FROM users WHERE user_id=$1 AND tenant_id=$2',[req.auth.userId,req.auth.tenantId]);\n if(account.rows[0]?.mfa_enabled)return res.status(409).json({error:'MFA is already enabled. Disable it with your password and authenticator code before enrolling again.'});\n const input=z.object({password:z.string().min(1)}).parse(req.body);\n if(!account.rows[0]||!(await bcrypt.compare(input.password,account.rows[0].password_hash)))return res.status(401).json({error:'Password confirmation failed.'});\n const secret=generateTotpSecret(),ciphertext=encryptSecret(secret);
+ const account=await pool.query('SELECT password_hash,mfa_enabled FROM users WHERE user_id=$1 AND tenant_id=$2',[req.auth.userId,req.auth.tenantId]);
+ if(account.rows[0]?.mfa_enabled)return res.status(409).json({error:'MFA is already enabled. Disable it with your password and authenticator code before enrolling again.'});
+ const input=z.object({password:z.string().min(1)}).parse(req.body);
+ if(!account.rows[0]||!(await bcrypt.compare(input.password,account.rows[0].password_hash)))return res.status(401).json({error:'Password confirmation failed.'});
+ const secret=generateTotpSecret(),ciphertext=encryptSecret(secret);
  await withTenantTransaction(req.auth.tenantId,req.auth.userId,async c=>{await c.query('UPDATE users SET mfa_secret_ciphertext=$2,mfa_enabled=false,mfa_recovery_code_hashes=$3::jsonb WHERE user_id=$1',[req.auth.userId,ciphertext,'[]']);await writeAudit(c,req,'MFA_ENROLLMENT_STARTED','users',req.auth.userId);});
  const issuer=encodeURIComponent('JEZTECH SafetyOS'),label=encodeURIComponent(req.auth.email||req.auth.userId);
  res.json({secret,otpauthUrl:'otpauth://totp/'+issuer+':'+label+'?secret='+secret+'&issuer='+issuer+'&algorithm=SHA1&digits=6&period=30',message:'Add this account to an authenticator app, then confirm with the six-digit code. Store the secret securely.'});
