@@ -144,26 +144,6 @@ CREATE TABLE IF NOT EXISTS release_approvals (
   decided_at timestamptz,
   UNIQUE (tenant_id, project_id, approver_role)
 );
--- All release-governance records are tenant-isolated using the same session context
--- as the existing application RLS policies.
-DO $release_rls$
-DECLARE tbl text;
-BEGIN
-  FOREACH tbl IN ARRAY ARRAY[
-    'release_projects','release_epics','release_sprints','release_tickets',
-    'release_milestones','release_risks','release_controls','release_approvals'
-  ] LOOP
-    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);
-    EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', tbl);
-    EXECUTE format('DROP POLICY IF EXISTS tenant_scope ON %I', tbl);
-    EXECUTE format(
-      'CREATE POLICY tenant_scope ON %I USING (tenant_id = app_current_tenant_id()) WITH CHECK (tenant_id = app_current_tenant_id())',
-      tbl
-    );
-  END LOOP;
-END
-$release_rls$;
-
 -- Provision one initial release-plan workspace and milestone set per existing tenant.
 WITH projects AS (
   INSERT INTO release_projects (tenant_id, project_name, release_version, status)
@@ -189,3 +169,24 @@ CROSS JOIN (VALUES
  ('M9','Hypercare Exit','+14 Days','No Sev1 incidents and SLA achieved','Product Owner','Operations Lead')
 ) AS m(code,name,sprint,criteria,executive_owner,delivery_owner)
 ON CONFLICT (tenant_id, project_id, milestone_code) DO NOTHING;
+
+-- All release-governance records are tenant-isolated using the same session context
+-- as the existing application RLS policies.
+DO $release_rls$
+DECLARE tbl text;
+BEGIN
+  FOREACH tbl IN ARRAY ARRAY[
+    'release_projects','release_epics','release_sprints','release_tickets',
+    'release_milestones','release_risks','release_controls','release_approvals'
+  ] LOOP
+    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tbl);
+    EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', tbl);
+    EXECUTE format('DROP POLICY IF EXISTS tenant_scope ON %I', tbl);
+    EXECUTE format(
+      'CREATE POLICY tenant_scope ON %I USING (tenant_id = app_current_tenant_id()) WITH CHECK (tenant_id = app_current_tenant_id())',
+      tbl
+    );
+  END LOOP;
+END
+$release_rls$;
+
