@@ -44,14 +44,14 @@ CREATE TABLE IF NOT EXISTS permit_to_work (
  updated_at timestamptz NOT NULL DEFAULT now(),
  UNIQUE(tenant_id,permit_code)
 );
-DO $$ DECLARE t text; BEGIN
+DO $policy$ DECLARE t text; BEGIN
  FOREACH t IN ARRAY ARRAY['safety_incidents','incident_revisions','permit_to_work'] LOOP
   EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY',t);
   EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY',t);
   EXECUTE format('DROP POLICY IF EXISTS tenant_scope ON %I',t);
   EXECUTE format('CREATE POLICY tenant_scope ON %I USING (tenant_id=app_current_tenant_id()) WITH CHECK (tenant_id=app_current_tenant_id())',t);
  END LOOP;
-END $;
+END $policy$;
 ALTER TABLE corrective_actions ADD COLUMN IF NOT EXISTS escalation_level integer NOT NULL DEFAULT 0;
 ALTER TABLE corrective_actions ADD COLUMN IF NOT EXISTS last_escalated_at timestamptz;
 CREATE OR REPLACE FUNCTION prevent_incident_revision_mutation()
