@@ -23,5 +23,5 @@ test('role permissions enforce least privilege',()=>{
  assert.equal(hasPermission('auditor_officer','permits:approve'),false);
  assert.equal(hasPermission('supervisor','permits:submit'),true);
  assert.equal(hasPermission('safety_department','security:read'),false);
- assert.ok(permissionsFor('user').length<permissionsFor('super_admin').length);
+ assert.equal(hasPermission('user','users:manage'),false);\n assert.equal(hasPermission('super_admin','users:manage'),true);
 });
