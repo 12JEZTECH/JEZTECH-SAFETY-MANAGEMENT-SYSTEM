@@ -47,6 +47,9 @@ jobs:
       - name: Apply migrations against PostgreSQL
         working-directory: backend
         run: npm run migrate
+      - name: Re-run migrations to verify idempotence
+        working-directory: backend
+        run: npm run migrate
       - name: Verify migrated security schema
         working-directory: backend
-        run: node --input-type=module -e "import pg from 'pg'; const p=new pg.Pool({connectionString:process.env.DATABASE_URL}); const r=await p.query(\"SELECT to_regclass('public.security_events') AS security_events,to_regclass('public.safety_incidents') AS safety_incidents,to_regclass('public.permit_to_work') AS permits\"); if(!r.rows[0].security_events||!r.rows[0].safety_incidents||!r.rows[0].permits) process.exit(1); await p.end();"
+        run: node --input-type=module -e "import pg from 'pg'; const p=new pg.Pool({connectionString:process.env.DATABASE_URL}); const r=await p.query(\"SELECT to_regclass('public.security_events') AS security_events,to_regclass('public.safety_incidents') AS safety_incidents,to_regclass('public.permit_to_work') AS permits,to_regclass('public.release_projects') AS release_projects,to_regclass('public.release_milestones') AS release_milestones\"); if(!r.rows[0].security_events||!r.rows[0].safety_incidents||!r.rows[0].permits||!r.rows[0].release_projects||!r.rows[0].release_milestones) process.exit(1); await p.end();"
