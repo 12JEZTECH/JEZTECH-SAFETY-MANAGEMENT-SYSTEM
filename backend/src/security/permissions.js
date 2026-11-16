@@ -1,7 +1,7 @@
 const matrix={
  super_admin:['*'],
  admin:['users:read','users:manage','sites:read','sites:manage','incidents:read','incidents:manage','incidents:approve','permits:read','permits:create','permits:approve','inspections:read','inspections:create','inspections:signoff','findings:manage','hazards:read','hazards:create','hazards:update','capa:read','capa:manage','capa:update','capa:verify','reports:read','security:read','audit:read'],
- safety_department:['sites:read','incidents:read','incidents:create','incidents:update','permits:read','permits:create','permits:submit','inspections:read','inspections:create','findings:manage','capa:manage','reports:read','audit:read'],
+ safety_department:['sites:read','incidents:read','incidents:create','incidents:update','permits:read','permits:create','permits:submit','inspections:read','inspections:create','findings:manage','hazards:read','hazards:create','hazards:update','capa:read','capa:manage','capa:update','reports:read','audit:read'],
  supervisor:['sites:read','incidents:read','incidents:create','incidents:update','permits:read','permits:create','permits:submit','hazards:read','hazards:create','hazards:update','capa:read','capa:update','reports:read'],
  user:['sites:read','incidents:create','incidents:read:self','reports:read:self'],
  auditor_officer:['sites:read','incidents:read','permits:read','inspections:read','inspections:create','inspections:signoff','findings:manage','hazards:read','capa:read','capa:verify','reports:read','audit:read'],
