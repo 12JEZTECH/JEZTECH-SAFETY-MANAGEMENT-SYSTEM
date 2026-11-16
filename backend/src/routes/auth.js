@@ -31,7 +31,7 @@ router.post('/login',async(req,res,next)=>{try{
   if(index>=0){const next=u.mfa_recovery_code_hashes.filter((_,i)=>i!==index);await withTenantTransaction(u.tenant_id,u.user_id,async c=>c.query('UPDATE users SET mfa_recovery_code_hashes=$2::jsonb WHERE user_id=$1',[u.user_id,JSON.stringify(next)]));}
  }
  await withTenantTransaction(u.tenant_id,u.user_id,async c=>{await c.query('UPDATE users SET last_login_at=now(),failed_login_attempts=0,locked_until=NULL WHERE user_id=$1',[u.user_id]);await writeAudit(c,{auth:{tenantId:u.tenant_id,userId:u.user_id},ip:req.ip},'USER_SIGN_IN','users',u.user_id);await c.query("INSERT INTO security_events(tenant_id,actor_user_id,event_type,severity,source_ip,user_agent) VALUES($1,$2,'LOGIN_SUCCESS','INFO',$3,$4)",[u.tenant_id,u.user_id,req.ip,req.get('user-agent')||null]);});
- res.json({token:tokenFor(u),user:{id:u.user_id,name:u.full_name,email:u.email,role:u.role,department:u.department,org:u.organization_name}});
+ res.json({token:tokenFor(u),user:{id:u.user_id,name:u.full_name,email:u.email,role:u.role,department:u.department,org:u.organization_name,mfaEnabled:!!u.mfa_enabled}});
 }catch(e){next(e)}});
 router.post('/mfa/verify',async(req,res,next)=>{try{
  const x=z.object({challengeToken:z.string().min(20),code:z.string().min(6).max(20)}).parse(req.body);
