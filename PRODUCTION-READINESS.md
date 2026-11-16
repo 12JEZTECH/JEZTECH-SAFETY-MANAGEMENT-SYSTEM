@@ -104,3 +104,16 @@ GO only when every P0 item is verified and signed off, there are no unresolved C
 NO-GO if migrations, restore, tenant isolation, privileged MFA, RBAC, HTTPS, or incident integrity have not been verified.
 
 A successful GitHub CI run is evidence of automated checks only. It does not establish that Render, production PostgreSQL, backups, browser workflows or penetration testing have passed.
+
+## Implementation update — 2026-11-16
+
+The upgrade branch now includes a tenant-scoped relational hazard register and corrective-action workflow:
+- Migration `006_hazards_and_capa.sql` creates hazard and corrective-action tables with forced tenant RLS.
+- Hazard risk scores and P0–P3 bands are calculated by PostgreSQL using the approved weighted formula.
+- Authenticated API routes support hazard creation/listing/status transitions and corrective-action assignment, progress, evidence submission and independent verification.
+- The frontend exposes the new Hazard & CAPA workspace at `/hazards.html`, linked from the main navigation.
+- Least-privilege permissions are defined for administrator, safety department, supervisor and auditor roles.
+
+These are implementation statements, not verification claims. CI must pass the migration and tests before these controls can be marked verified. The browser module requires a signed-in session from the main SafetyOS application. The API enforces tenant-scoped user/site references; provide UUIDs from the current organisation.
+
+Remaining work still includes full release-governance API/UI, complete end-to-end integration for every legacy workspace module, endpoint-by-endpoint authorization and tenant-boundary tests, operational monitoring and alert delivery evidence, external penetration testing, production secrets/TLS configuration, and a successful backup/restore drill.
