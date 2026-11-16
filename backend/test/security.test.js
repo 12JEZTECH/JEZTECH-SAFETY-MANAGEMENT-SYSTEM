@@ -6,7 +6,7 @@ import {hasPermission} from '../src/security/permissions.js';
 test('TOTP secrets generate valid time-based codes',()=>{
  const secret=generateTotpSecret();
  const code=totpAt(secret);
- assert.match(code,/^\\d{6}$/);
+ assert.match(code,/^\d{6}$/);
  assert.equal(verifyTotp(secret,code),true);
  assert.equal(verifyTotp(secret,'0000000'),false);
 });
