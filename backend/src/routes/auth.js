@@ -9,7 +9,7 @@ import { writeAudit } from '../services/audit.js';
 import { generateTotpSecret, verifyTotp, encryptSecret, decryptSecret } from '../services/totp.js';
 const router=Router();
 const loginSchema=z.object({email:z.string().email().max(180),password:z.string().min(1).max(200),mfaCode:z.string().optional()});
-const registerSchema=z.object({name:z.string().min(2).max(140),email:z.string().email().max(180),department:z.string().min(1).max(120),requestedRole:z.enum(['user','safety_department','auditor_officer','admin','super_admin']),password:z.string().min(10).max(200)});
+const registerSchema=z.object({name:z.string().min(2).max(140),email:z.string().email().max(180),department:z.string().min(1).max(120),requestedRole:z.enum(['user','supervisor','safety_department','auditor_officer','admin','super_admin']),password:z.string().min(10).max(200)});
 function tokenFor(user){return jwt.sign({tenantId:user.tenant_id,ver:user.token_version||0},process.env.JWT_SECRET,{subject:user.user_id,expiresIn:process.env.JWT_EXPIRES_IN||'8h',algorithm:'HS256'});}
 async function recoveryIndex(user,code){const hashes=Array.isArray(user.mfa_recovery_code_hashes)?user.mfa_recovery_code_hashes:[];for(let i=0;i<hashes.length;i++)if(await bcrypt.compare(String(code||''),hashes[i]))return i;return -1;}
 router.post('/login',async(req,res,next)=>{try{
