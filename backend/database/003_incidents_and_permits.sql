@@ -51,8 +51,14 @@ DO $$ DECLARE t text; BEGIN
   EXECUTE format('DROP POLICY IF EXISTS tenant_scope ON %I',t);
   EXECUTE format('CREATE POLICY tenant_scope ON %I USING (tenant_id=app_current_tenant_id()) WITH CHECK (tenant_id=app_current_tenant_id())',t);
  END LOOP;
-END $$;
+END $;
+ALTER TABLE corrective_actions ADD COLUMN IF NOT EXISTS escalation_level integer NOT NULL DEFAULT 0;
+ALTER TABLE corrective_actions ADD COLUMN IF NOT EXISTS last_escalated_at timestamptz;
 CREATE OR REPLACE FUNCTION prevent_incident_revision_mutation()
 RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Incident revisions are immutable'; END $$;
 DROP TRIGGER IF EXISTS incident_revisions_no_update ON incident_revisions;
 CREATE TRIGGER incident_revisions_no_update BEFORE UPDATE OR DELETE ON incident_revisions FOR EACH ROW EXECUTE FUNCTION prevent_incident_revision_mutation();
+
+CREATE OR REPLACE FUNCTION prevent_submitted_incident_delete() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'Incident records cannot be deleted; amend with a revision'; END $$;
+DROP TRIGGER IF EXISTS safety_incidents_no_delete ON safety_incidents;
+CREATE TRIGGER safety_incidents_no_delete BEFORE DELETE ON safety_incidents FOR EACH ROW EXECUTE FUNCTION prevent_submitted_incident_delete();
