@@ -1,12 +1,34 @@
 name: SafetyOS CI
 on:
   push:
-    branches: [main]
+    branches: [main, security/hardening-phase-1]
   pull_request:
     branches: [main]
+permissions:
+  contents: read
 jobs:
   syntax-and-tests:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: safetyos
+          POSTGRES_PASSWORD: safetyos_test_password
+          POSTGRES_DB: safetyos_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U safetyos -d safetyos_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://safetyos:safetyos_test_password@localhost:5432/safetyos_test
+      JWT_SECRET: ci_only_jwt_secret_value_32_characters_minimum
+      QR_HMAC_SECRET: ci_only_qr_hmac_secret_value_32_chars_min
+      MFA_ENCRYPTION_KEY: ci_only_mfa_encryption_secret_32_characters
+      NODE_ENV: test
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,6 +41,12 @@ jobs:
         run: npm install
       - name: Check JavaScript syntax
         run: find backend/src -name '*.js' -print0 | xargs -0 -n1 node --check
-      - name: Run tests
+      - name: Run unit and smoke tests
         working-directory: backend
         run: npm test
+      - name: Apply migrations against PostgreSQL
+        working-directory: backend
+        run: npm run migrate
+      - name: Verify migrated security schema
+        working-directory: backend
+        run: node --input-type=module -e "import pg from 'pg'; const p=new pg.Pool({connectionString:process.env.DATABASE_URL}); const r=await p.query(\"SELECT to_regclass('public.security_events') AS security_events,to_regclass('public.safety_incidents') AS safety_incidents,to_regclass('public.permit_to_work') AS permits\"); if(!r.rows[0].security_events||!r.rows[0].safety_incidents||!r.rows[0].permits) process.exit(1); await p.end();"
