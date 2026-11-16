@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {generateTotpSecret,totpAt,verifyTotp,encryptSecret,decryptSecret} from '../src/services/totp.js';
-import {hasPermission,permissionsFor} from '../src/security/permissions.js';
+import {hasPermission} from '../src/security/permissions.js';
 
 test('TOTP secrets generate valid time-based codes',()=>{
  const secret=generateTotpSecret();
  const code=totpAt(secret);
- assert.match(code,/^\d{6}$/);
+ assert.match(code,/^\\d{6}$/);
  assert.equal(verifyTotp(secret,code),true);
  assert.equal(verifyTotp(secret,'0000000'),false);
 });
@@ -23,5 +23,6 @@ test('role permissions enforce least privilege',()=>{
  assert.equal(hasPermission('auditor_officer','permits:approve'),false);
  assert.equal(hasPermission('supervisor','permits:submit'),true);
  assert.equal(hasPermission('safety_department','security:read'),false);
- assert.equal(hasPermission('user','users:manage'),false);\n assert.equal(hasPermission('super_admin','users:manage'),true);
+ assert.equal(hasPermission('user','users:manage'),false);
+ assert.equal(hasPermission('super_admin','users:manage'),true);
 });
