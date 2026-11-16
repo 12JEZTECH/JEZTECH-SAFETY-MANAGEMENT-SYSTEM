@@ -12,7 +12,7 @@ export async function authenticateToken(req,res,next){
   if(!u||!u.active||u.pending||!['ACTIVE','TRIAL'].includes(u.tenant_status))return res.status(401).json({error:'This account or organisation is inactive.'});
   if(Number(payload.ver??0)!==Number(u.token_version??0))return res.status(401).json({error:'Session has been revoked. Sign in again.'});
   req.auth={userId:u.user_id,tenantId:u.tenant_id,role:u.role,email:u.email,name:u.full_name,mfaEnabled:!!u.mfa_enabled};
-  if(['super_admin','admin'].includes(u.role)&&!u.mfa_enabled&&!req.path.startsWith('/mfa/'))return res.status(403).json({error:'MFA enrollment is mandatory for administrator accounts. Enable MFA before continuing.'});
+  if(['super_admin','admin'].includes(u.role)&&!u.mfa_enabled&&!req.path.startsWith('/mfa/')&&req.path!=='/me')return res.status(403).json({error:'MFA enrollment is mandatory for administrator accounts. Enable MFA before continuing.'});
   next();
  }catch(e){if(['JsonWebTokenError','TokenExpiredError','NotBeforeError'].includes(e.name))return res.status(401).json({error:'Session is invalid or expired.'});next(e);}
 }
