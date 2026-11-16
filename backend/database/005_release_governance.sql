@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS release_tickets (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (tenant_id, ticket_id),
-  FOREIGN KEY (tenant_id, epic_id) REFERENCES release_epics(tenant_id, epic_id) ON DELETE SET NULL
+  FOREIGN KEY (tenant_id, epic_id) REFERENCES release_epics(tenant_id, epic_id) ON DELETE SET NULL (epic_id)
 );
 CREATE INDEX IF NOT EXISTS release_tickets_project_status_idx
   ON release_tickets(tenant_id, project_id, status, priority);
@@ -163,3 +163,29 @@ BEGIN
   END LOOP;
 END
 $release_rls$;
+
+-- Provision one initial release-plan workspace and milestone set per existing tenant.
+WITH projects AS (
+  INSERT INTO release_projects (tenant_id, project_name, release_version, status)
+  SELECT tenant_id, 'JEZTECH SafetyOS Release Plan', '1.0', 'PLANNING'
+  FROM tenants
+  ON CONFLICT (tenant_id, project_name, release_version) DO UPDATE
+    SET project_name = EXCLUDED.project_name
+  RETURNING project_id, tenant_id
+)
+INSERT INTO release_milestones
+  (tenant_id, project_id, milestone_code, milestone_name, target_sprint, exit_criteria, executive_owner, delivery_owner)
+SELECT p.tenant_id, p.project_id, m.code, m.name, m.sprint, m.criteria, m.executive_owner, m.delivery_owner
+FROM projects p
+CROSS JOIN (VALUES
+ ('M1','Security Foundation Complete','Sprint 1','MFA, RBAC, secrets management and TLS verified','CIO / Sponsor','Security Lead'),
+ ('M2','Production Platform Ready','Sprint 2','Pen test complete, backups restored successfully, OWASP controls validated','CTO','Engineering Lead'),
+ ('M3','Operational Safety Workflows Ready','Sprint 3','Hazard register, corrective actions and near-miss workflows operational','Head of Safety','Safety Manager'),
+ ('M4','Security Operations & Monitoring Ready','Sprint 4','Monitoring, alerting, session controls and incident response playbooks live','CISO','Security Lead'),
+ ('M5','Compliance & Governance Ready','Sprint 5','Compliance reporting, permit-to-work and contractor management deployed','Compliance Director','Compliance Officer'),
+ ('M6','UAT Sign-Off','Sprint 5','Business, Safety, Security and Compliance approval obtained','Product Owner','QA Lead'),
+ ('M7','Production Readiness Review','Sprint 5','Readiness at least 90 percent and no Critical vulnerabilities','Steering Committee','Release Manager'),
+ ('M8','Go-Live','Release Day','CAB approval and deployment completed','Executive Sponsor','DevOps Lead'),
+ ('M9','Hypercare Exit','+14 Days','No Sev1 incidents and SLA achieved','Product Owner','Operations Lead')
+) AS m(code,name,sprint,criteria,executive_owner,delivery_owner)
+ON CONFLICT (tenant_id, project_id, milestone_code) DO NOTHING;
