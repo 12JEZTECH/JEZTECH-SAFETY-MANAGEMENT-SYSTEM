@@ -18,3 +18,6 @@ export async function authenticateToken(req,res,next){
 }
 export const requireRole=roles=>(req,res,next)=>roles.includes(req.auth?.role)?next():res.status(403).json({error:'You do not have permission.'});
 export const tenantTx=(req,fn)=>withTenantTransaction(req.auth.tenantId,req.auth.userId,fn);
+
+import {hasPermission} from '../security/permissions.js';
+export const requirePermission=permission=>(req,res,next)=>hasPermission(req.auth?.role,permission)?next():res.status(403).json({error:'You do not have permission to perform this action.'});
