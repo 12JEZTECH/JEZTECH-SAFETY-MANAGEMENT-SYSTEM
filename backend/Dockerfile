@@ -6,4 +6,4 @@ COPY backend/src ./src
 COPY backend/database ./database
 COPY frontend /frontend
 EXPOSE 8080
-CMD ["sh","-c","npm run migrate && npm start"]
+CMD ["sh","-c","npm run migrate && node src/bootstrap-once.js && npm start"]
