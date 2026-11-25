@@ -1,0 +1,29 @@
+Issue Type,Issue Key,Summary,Description,Priority,Story Points,Sprint,Epic Link,Assignee,Labels,Risk Score,Risk Priority
+Epic,EPIC-001,Security Foundation,Core security controls required before go-live,Highest,,Sprint 1,,Security Lead,Security,,
+Story,SEC-001,Implement Multi-Factor Authentication,MFA enforced for Admin and Safety Manager accounts with tested recovery and failure audit events,Highest,8,Sprint 1,EPIC-001,Security Lead,Security P0,92,P0
+Story,SEC-002,Implement Role-Based Access Control,Define five business roles and enforce page and API permissions with separation tests,Highest,13,Sprint 1,EPIC-001,Engineering Lead,Security P0,90,P0
+Story,SEC-003,Secure Secrets Management,Remove repository secrets enable scanning document rotation and rotate production credentials,Highest,5,Sprint 1,EPIC-001,DevOps Lead,Security P0,88,P0
+Story,SEC-004,HTTPS TLS Enforcement,Redirect HTTP to HTTPS enable HSTS validate certificates and remove mixed content,Highest,3,Sprint 1,EPIC-001,DevOps Lead,Security P0,85,P0
+Story,SEC-006,Centralised Audit Logging,Log authentication role incident hazard and user activity events with search and tamper resistance,Highest,8,Sprint 1,EPIC-001,Engineering Lead,Security P0,83,P0
+Epic,EPIC-002,Go-Live Security,Production readiness security controls,Highest,,Sprint 2,,Security Lead,Security,,
+Story,SEC-005,Conduct Penetration Testing,Complete internal and independent external penetration testing and close Critical findings,Highest,13,Sprint 2,EPIC-002,Security Lead,Security P0,95,P0
+Story,SEC-007,Backup and Disaster Recovery,Automate daily backups verify restore documentation and demonstrate RTO,Highest,8,Sprint 2,EPIC-002,DevOps Lead,Security P0,90,P0
+Story,SEC-008,OWASP Security Hardening,Implement and validate OWASP Top 10 controls remediate dependency findings,Highest,13,Sprint 2,EPIC-002,Engineering Lead,Security P0,88,P0
+Story,SEC-009,Immutable Incident Records,Prevent incident deletion retain immutable revisions and full user attribution,Highest,8,Sprint 2,EPIC-002,Engineering Lead,Security P0,82,P0
+Story,SEC-010,Business Continuity Planning,Approve disaster recovery rollback escalation and recovery contact procedures,Highest,5,Sprint 2,EPIC-002,DevOps Lead,Security P0,80,P0
+Epic,EPIC-003,Safety Operations,Safety workflow implementation,High,,Sprint 3,,Safety Manager,Safety,,
+Story,SAFE-011,Corrective Actions Workflow,Assign owners due dates evidence status and closure approval,High,8,Sprint 3,EPIC-003,Safety Manager,Safety P1,78,P1
+Story,SAFE-012,Hazard Register,Central hazard register with automated risk scoring controls and review history,Highest,13,Sprint 3,EPIC-003,Safety Manager,Safety P0,82,P0
+Story,SAFE-013,Near Miss Reporting,Employee and anonymous reporting notifications investigation and dashboard reporting,High,8,Sprint 3,EPIC-003,Safety Manager,Safety P1,76,P1
+Story,SAFE-014,Escalation Engine,Identify overdue actions send reminders and escalate to supervisors with history,High,5,Sprint 3,EPIC-003,Engineering Lead,Safety P1,74,P1
+Story,SAFE-015,Monitoring and Alerting,Operational dashboard failed login API and database health alerts,High,8,Sprint 3,EPIC-003,Security Lead,Operations P1,79,P1
+Epic,EPIC-004,Compliance and Governance,Compliance and operational controls,Medium,,Sprint 4-5,,Compliance Officer,Compliance,,
+Story,SAFE-016,Vulnerability Scanning,Schedule weekly scans and report Critical vulnerabilities,High,8,Sprint 4,EPIC-004,Security Lead,Compliance P1,77,P1
+Story,SAFE-017,Encryption at Rest,Verify provider encryption and implement justified field and evidence encryption,High,13,Sprint 4,EPIC-004,DevOps Lead,Compliance,,
+Story,SAFE-018,API Protection,Implement endpoint rate limiting and abuse prevention,Medium,5,Sprint 4,EPIC-004,Engineering Lead,Compliance,,
+Story,SAFE-019,Session Security,Enforce session timeout token revocation and recovery controls,Medium,5,Sprint 4,EPIC-004,Engineering Lead,Compliance,,
+Story,SAFE-020,Incident Response Playbooks,Document and test security incident response plans,Medium,8,Sprint 4,EPIC-004,Security Lead,Compliance,,
+Story,SAFE-021,Compliance Dashboard,Deliver live compliance reporting and evidence status,Medium,8,Sprint 5,EPIC-004,Compliance Officer,Compliance,,
+Story,SAFE-022,Contractor Safety Management,Track contractor compliance induction and access,Medium,8,Sprint 5,EPIC-004,Safety Manager,Compliance,,
+Story,SAFE-024,Permit to Work Workflow,Digital permit creation submission approval and closure validation,Medium,13,Sprint 5,EPIC-004,Safety Manager,Compliance,,
+Story,SAFE-028,Training Certification Tracker,Track training records certifications expiry and alerts,Medium,8,Sprint 5,EPIC-004,Safety Manager,Compliance,,
