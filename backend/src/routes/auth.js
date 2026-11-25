@@ -76,6 +76,24 @@ router.post('/mfa/disable',authenticateToken,async(req,res,next)=>{try{
  res.json({disabled:true,message:'MFA disabled. Other active sessions have been revoked.'});
 }catch(e){next(e)}});
 router.post('/logout',authenticateToken,async(req,res,next)=>{try{await withTenantTransaction(req.auth.tenantId,req.auth.userId,async c=>{await c.query('UPDATE users SET token_version=token_version+1 WHERE user_id=$1',[req.auth.userId]);await writeAudit(c,req,'USER_SIGN_OUT','users',req.auth.userId)});res.json({ok:true})}catch(e){next(e)}});
-router.post('/register',async(req,res,next)=>{try{const x=registerSchema.parse(req.body),t=await pool.query("SELECT tenant_id FROM tenants WHERE tenant_id=$1 AND status IN ('ACTIVE','TRIAL')",[x.tenantId]);if(!t.rows[0])return res.status(503).json({error:'Invalid or unavailable institution.'});const tenant=t.rows[0].tenant_id,pending=true,hash=await bcrypt.hash(x.password,12);const r=await pool.query("INSERT INTO users(tenant_id,full_name,email,password_hash,role,requested_role,department,active,pending) VALUES($1,$2,lower($3),$4,'user',$5,$6,$7,$8) RETURNING user_id",[tenant,x.name,x.email,hash,x.requestedRole,x.department,!pending,pending]);res.status(201).json({message:pending?'Registration submitted for administrator approval.':'Registration complete.',pending,userId:r.rows[0].user_id})}catch(e){if(e.code==='23505')return res.status(409).json({error:'Account already exists.'});next(e)}});
+
+const institutionSchema=z.object({organization_name:z.string().trim().min(2).max(180),institution_type:z.enum(['GENERAL','SCHOOL','TVET','UNIVERSITY','HOSPITAL','CLINIC','FACTORY','CONSTRUCTION','GOVERNMENT','COMMERCIAL','OTHER']),name:z.string().trim().min(2).max(140),email:z.string().trim().email().max(180),password:z.string().min(14).refine(v=>Buffer.byteLength(v)<=72,'Password must not exceed 72 bytes')});
+router.post('/register-institution',async(req,res,next)=>{let c;try{
+ const x=institutionSchema.parse(req.body);const hash=await bcrypt.hash(x.password,12);
+ c=await pool.connect();await c.query('BEGIN');
+ const t=await c.query("INSERT INTO tenants(organization_name,institution_type,status,trial_started_at,access_expires_at) VALUES($1,$2,'TRIAL',now(),now()+interval '30 days') RETURNING tenant_id,access_expires_at",[x.organization_name,x.institution_type]);
+ const id=t.rows[0].tenant_id;await c.query("SELECT set_config('app.tenant_id',$1,true)",[id]);
+ const u=await c.query("INSERT INTO users(tenant_id,full_name,email,password_hash,role,requested_role,department,active,pending) VALUES($1,$2,lower($3),$4,'admin','admin','Administration',true,false) RETURNING user_id",[id,x.name,x.email,hash]);
+ await c.query("SELECT set_config('app.user_id',$1,true)",[u.rows[0].user_id]);
+ await c.query("INSERT INTO sites(tenant_id,site_name) VALUES($1,'Main Site')",[id]);
+ await writeAudit(c,{auth:{tenantId:id,userId:u.rows[0].user_id},ip:req.ip},'INSTITUTION_REGISTERED','tenants',id);
+ await c.query('COMMIT');res.status(201).json({message:'Institution registered. Your 30-day trial is active. Sign in and enroll MFA.',expiresAt:t.rows[0].access_expires_at});
+ }catch(e){if(c)await c.query('ROLLBACK');if(e.code==='23505')return res.status(409).json({error:'An account with this email already exists.'});next(e)}finally{if(c)c.release()}});
+router.post('/employee-invitation',authenticateToken,async(req,res,next)=>{try{
+ if(req.auth.role!=='admin')return res.status(403).json({error:'Institution administrator access required.'});
+ const code=jwt.sign({purpose:'employee_invitation',tenantId:req.auth.tenantId},process.env.JWT_SECRET,{algorithm:'HS256',expiresIn:'24h'});
+ res.json({code,expiresIn:'24 hours'});
+ }catch(e){next(e)}});
+router.post('/register',async(req,res,next)=>{try{let body={...req.body};if(body.invitationCode){try{const invite=jwt.verify(body.invitationCode,process.env.JWT_SECRET,{algorithms:['HS256']});if(invite.purpose!=='employee_invitation')throw Error();body.tenantId=invite.tenantId;}catch{return res.status(400).json({error:'Invitation code is invalid or expired. Ask your administrator for a new code.'});}}const x=registerSchema.parse(body),t=await pool.query("SELECT tenant_id FROM tenants WHERE tenant_id=$1 AND status IN ('ACTIVE','TRIAL')",[x.tenantId]);if(!t.rows[0])return res.status(400).json({error:'Invalid or unavailable institution.'});const tenant=t.rows[0].tenant_id,pending=true,hash=await bcrypt.hash(x.password,12);const r=await pool.query("INSERT INTO users(tenant_id,full_name,email,password_hash,role,requested_role,department,active,pending) VALUES($1,$2,lower($3),$4,'user',$5,$6,$7,$8) RETURNING user_id",[tenant,x.name,x.email,hash,x.requestedRole,x.department,!pending,pending]);res.status(201).json({message:pending?'Registration submitted for administrator approval.':'Registration complete.',pending,userId:r.rows[0].user_id})}catch(e){if(e.code==='23505')return res.status(409).json({error:'Account already exists.'});next(e)}});
 router.get('/me',authenticateToken,(req,res)=>res.json({user:req.auth}));
 export default router;
