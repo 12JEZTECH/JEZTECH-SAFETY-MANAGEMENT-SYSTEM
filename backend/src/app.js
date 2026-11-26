@@ -19,6 +19,7 @@ import releaseGovernanceRoutes from './routes/release-governance.js';
 import {pool} from './config/db.js';
 import recoveryRoutes from './routes/recovery.js';
 import administrationRoutes from './routes/administration.js';
+import enterpriseRegisters from './routes/enterprise-registers.js';
 const app=express();
 app.disable('x-powered-by');
 const proxyHops=Number(process.env.TRUST_PROXY_HOPS||0);
@@ -32,6 +33,7 @@ app.get('/api/health',async(req,res)=>{try{await pool.query('SELECT 1');res.json
 app.use('/api/auth',rateLimit({windowMs:15*60*1000,limit:30,standardHeaders:true,legacyHeaders:false}),authRoutes);
 app.use('/api/recovery',recoveryRoutes);
 app.use('/api/administration',administrationRoutes);
+app.use('/api/enterprise',enterpriseRegisters);
 app.use('/api',workspaceRoutes);
 app.use('/api/v1/auditor',auditorRoutes);
 app.use('/api/v1/contractors',contractorRoutes);
