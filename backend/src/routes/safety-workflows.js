@@ -1,4 +1,5 @@
 import {Router} from 'express';
+import {requireRole} from '../middleware/auth.js';
 import {z} from 'zod';
 import {authenticateToken,requirePermission,tenantTx} from '../middleware/auth.js';
 import {writeAudit} from '../services/audit.js';
